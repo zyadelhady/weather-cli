@@ -1,6 +1,6 @@
 # Weather
 
-**TODO: Add description**
+A weather cli application written in elixir
 
 ## Installation
 
