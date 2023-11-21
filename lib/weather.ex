@@ -4,13 +4,14 @@ defmodule Weather do
   """
   alias Task
   @weather_url_api "https://api.weatherapi.com/v1/forecast.json?"
+  @colors [:light_magenta, :blue, :cyan, :green, :light_blue, :light_cyan, :light_magenta]
 
   def get(countries) do
     countries
     |> Enum.map(&spawn_get/1)
     |> Enum.map(&Task.await/1)
     |> List.flatten()
-    |> Enum.map(&print_table/1)
+    |> print_table()
   end
 
   def spawn_get(country) do
@@ -34,7 +35,7 @@ defmodule Weather do
     Jason.decode!(body)
   end
 
-  def parse_json(%HTTPoison.Response{status_code: 400, body: body}) do
+  def parse_json(%HTTPoison.Response{status_code: 400}) do
     IO.puts("No weather data is available for a country , please double check")
     System.halt(2)
   end
@@ -44,44 +45,55 @@ defmodule Weather do
     System.halt(2)
   end
 
-  def get_forecast(%{"forecast" => %{"forecastday" => forecast_days}}) do
-    forecast_days
-  end
-
-  def get_day_data(%{"date" => date, "day" => day}) do
-    %{:date => date, :day => day}
-  end
-
-  def print_table(%{
-        date: date,
-        day: %{
-          "avgtemp_c" => avg_temp_c,
-          "avghumidity" => avg_humidity,
-          "condition" => %{"text" => text},
-          "maxtemp_c" => max_temp,
-          "mintemp_c" => min_temp
-        }
+  def get_forecast(%{
+        "location" => %{"name" => location},
+        "forecast" => %{"forecastday" => forecast_days}
       }) do
-    IO.puts("""
-       ———————— #{date} ——————
-      |                          |
-      |                          |
-      |                          |
-      |                          |
-      |                          |
-      |                          |
-      |                          |
-       ——————————————————————————
-    """)
+    forecast_days
+    |> Enum.map(&add_location(&1, location))
+  end
 
-    # IO.puts(" ———————————————————————")
-    # IO.puts(" |                     |")
-    # IO.puts(" |                     |")
-    # IO.puts(" |                     |")
-    # IO.puts(" |                     |")
-    # IO.puts(" |                     |")
-    # IO.puts(" |                     |")
-    # IO.puts(" |                     |")
-    # IO.puts(" ———————————————————————")
+  defp add_location(day, location) do
+    Map.put(day, "location", location)
+  end
+
+  def get_day_data(%{"date" => date, "day" => day, "location" => location}) do
+    %{:date => date, :day => day, :location => location}
+  end
+
+  def print_table(days) do
+    x =
+      days
+      |> Enum.map(&create_table/1)
+
+    IO.puts(x)
+  end
+
+  defp create_table(%{
+         location: location,
+         date: date,
+         day: %{
+           "avgtemp_c" => avg_temp_c,
+           "avghumidity" => avg_humidity,
+           "condition" => %{"text" => condition},
+           "maxwind_kph" => max_wind,
+           "daily_chance_of_rain" => rain_chance
+         }
+       }) do
+    IO.ANSI.format([
+      Enum.random(@colors),
+      """
+
+        ———————— #{date}-(#{location}) ———————
+
+        -> C #{condition}       
+        -> T #{avg_temp_c} C    
+        -> W #{max_wind} Km/h             
+        -> R #{rain_chance} % 
+        -> H #{avg_humidity}
+        ———————————————————————————————————
+
+      """
+    ])
   end
 end
