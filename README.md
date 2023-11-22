@@ -1,13 +1,15 @@
 # Weather-CLI
 
-A weather cli application written in elixir
+A weather cli application written in elixir to get weather for multiple countries
+using Tasks in elixir
 
-## How To Use 
+## How To Use
 
 ```
 $> source config/.env
-$> build
+$> ./weather cairo spain morocco palestine 
 ```
+call executable with as many countries or cities as you want
 
 ## Installation
 
