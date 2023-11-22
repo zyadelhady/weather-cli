@@ -6,12 +6,13 @@ defmodule Weather do
   @weather_url_api "https://api.weatherapi.com/v1/forecast.json?"
   @colors [:light_magenta, :blue, :cyan, :green, :light_blue, :light_cyan, :light_magenta]
 
+  @doc """
+  This function won't be listed in docs.
+  """
   def get(countries) do
     countries
     |> Enum.map(&spawn_get/1)
     |> Enum.map(&Task.await/1)
-    |> List.flatten()
-    |> print_table()
   end
 
   def spawn_get(country) do
@@ -25,6 +26,8 @@ defmodule Weather do
     |> parse_json()
     |> get_forecast()
     |> Enum.map(&get_day_data/1)
+    |> List.flatten()
+    |> print_table()
   end
 
   def generate_url(country) do
@@ -37,6 +40,11 @@ defmodule Weather do
 
   def parse_json(%HTTPoison.Response{status_code: 400}) do
     IO.puts("No weather data is available for a country , please double check")
+    System.halt(2)
+  end
+
+  def parse_json(%HTTPoison.Response{status_code: 403}) do
+    IO.puts("There is something wrong with the authentecation change the api key")
     System.halt(2)
   end
 
@@ -66,7 +74,12 @@ defmodule Weather do
       days
       |> Enum.map(&create_table/1)
 
-    IO.puts(x)
+    IO.puts(
+      IO.ANSI.format([
+        Enum.random(@colors),
+        x
+      ])
+    )
   end
 
   defp create_table(%{
@@ -80,20 +93,17 @@ defmodule Weather do
            "daily_chance_of_rain" => rain_chance
          }
        }) do
-    IO.ANSI.format([
-      Enum.random(@colors),
-      """
+    """
 
-        ———————— #{date}-(#{location}) ———————
+      ———————— #{date}-(#{location}) ———————
 
-        -> C #{condition}       
-        -> T #{avg_temp_c} C    
-        -> W #{max_wind} Km/h             
-        -> R #{rain_chance} % 
-        -> H #{avg_humidity}
-        ———————————————————————————————————
+      -> C #{condition}       
+      -> T #{avg_temp_c} C    
+      -> W #{max_wind} Km/h             
+      -> R #{rain_chance} % 
+      -> H #{avg_humidity}
+      ———————————————————————————————————
 
-      """
-    ])
+    """
   end
 end
