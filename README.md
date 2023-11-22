@@ -7,8 +7,9 @@ using Tasks in elixir
 
 ```
 $> source config/.env
-$> ./weather cairo spain morocco palestine 
+$> ./weather cairo spain morocco palestine
 ```
+
 call executable with as many countries or cities as you want
 
 ## Installation
